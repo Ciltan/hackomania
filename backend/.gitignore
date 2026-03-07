@@ -158,6 +158,8 @@ cython_debug/
 scripts/
 tests/
 *.csv
+!app/data/**/*.csv
+!app/data/*.csv
 *.txt
 *.png
 *.webp
