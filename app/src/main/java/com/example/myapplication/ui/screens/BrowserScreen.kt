@@ -25,7 +25,7 @@ import com.example.myapplication.ui.theme.*
 fun BrowserScreen(
     article: ArticleContent = MockData.articleContent,
     onBack: () -> Unit,
-    onCheckCredibility: () -> Unit
+    onCheckCredibility: (String) -> Unit
 ) {
     val warningColor: Color
     val warningBg: Color
@@ -132,7 +132,7 @@ fun BrowserScreen(
                 )
                 Spacer(Modifier.height(10.dp))
                 Button(
-                    onClick = onCheckCredibility,
+                    onClick = { onCheckCredibility(article.url) },
                     modifier = Modifier.height(36.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AccentBlue, contentColor = Color.White),

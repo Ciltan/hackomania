@@ -58,6 +58,10 @@ def analyze_pipeline(request: AnalyzeRequest, domain_override: str = None) -> An
                 "context": f"Search Result from {res['source']}"
             })
 
+    print(f"\n[EVIDENCE SOURCE] Gathering evidence for claim: '{llm_claim.claim}'", flush=True)
+    for i, a in enumerate(related_articles):
+        source_type = "Web Search" if "Web Evidence:" in a['name'] else "FACTors Dataset"
+        print(f"  --> {i+1}: [{source_type}] {a['name']}", flush=True)
     # 5. Final Verdict and Formatting
     try:
         final_verdict = formulate_verdict(

@@ -31,6 +31,7 @@ import com.example.myapplication.ui.theme.*
 
 @Composable
 fun HomeScreen(
+    isLoading: Boolean = false,
     onCheckCredibility: (String) -> Unit,
     onRecentItemClick: (String) -> Unit,
     onNavigateUploadScreenshot: () -> Unit = {},
@@ -165,6 +166,7 @@ fun HomeScreen(
                     focusManager.clearFocus()
                     if (inputText.isNotBlank()) onCheckCredibility(inputText)
                 },
+                enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -174,23 +176,29 @@ fun HomeScreen(
                     contentColor = Color.White
                 )
             ) {
-                Icon(
-                    Icons.Filled.Shield,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "Analyze Now",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.Shield,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Analyze Now",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
 
-<<<<<<< HEAD
         Spacer(Modifier.height(24.dp))
-
         // Actions Section
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             Text(
@@ -224,9 +232,6 @@ fun HomeScreen(
                 onClick = onNavigateEmergencyHub
             )
         }
-
-=======
->>>>>>> cb8d8e4d3b3b3f38bb070ec3c11d6eb2a74d73d8
         Spacer(Modifier.height(28.dp))
 
         // Recent Analysis Section
@@ -447,8 +452,6 @@ private fun HowItWorksSection() {
         }
     }
 }
-<<<<<<< HEAD
-
 @Composable
 fun FeatureCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Row(
@@ -486,5 +489,3 @@ fun FeatureCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVe
         )
     }
 }
-=======
->>>>>>> cb8d8e4d3b3b3f38bb070ec3c11d6eb2a74d73d8

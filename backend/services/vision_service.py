@@ -1,10 +1,7 @@
 import base64
 import tempfile
 import os
-from openai import OpenAI
-from core.config import OPENAI_API_KEY, OPENAI_MODEL
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from core.config import get_openai_client, OPENAI_MODEL
 
 
 def extract_text_from_image(image_bytes: bytes, mime_type: str = "image/png") -> str:
@@ -12,6 +9,7 @@ def extract_text_from_image(image_bytes: bytes, mime_type: str = "image/png") ->
     b64_image = base64.b64encode(image_bytes).decode("utf-8")
     data_url = f"data:{mime_type};base64,{b64_image}"
 
+    client = get_openai_client()
     response = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[

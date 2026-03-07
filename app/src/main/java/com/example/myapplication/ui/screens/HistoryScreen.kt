@@ -21,7 +21,7 @@ import com.example.myapplication.ui.theme.*
 
 @Composable
 fun HistoryScreen(
-    onItemClick: (String) -> Unit
+    onItemClick: (RecentAnalysis) -> Unit
 ) {
     val allHistory = remember {
         MockData.recentAnalyses + listOf(
@@ -30,6 +30,13 @@ fun HistoryScreen(
             RecentAnalysis("6", "Viral: Free iPhone giveaway by telco...", "4d ago", 5, CredibilityLevel.LOW),
             RecentAnalysis("7", "HDB BTO launch delayed to Q3...", "5d ago", 81, CredibilityLevel.HIGH)
         )
+    }
+
+    var selectedFilter by remember { mutableStateOf("All") }
+
+    val filteredHistory = remember(selectedFilter) {
+        if (selectedFilter == "All") allHistory
+        else allHistory.filter { it.credibilityLevel.name.equals(selectedFilter, ignoreCase = true) }
     }
 
     Column(
@@ -66,15 +73,14 @@ fun HistoryScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val filters = listOf("All", "High", "Medium", "Low")
-            var selected by remember { mutableStateOf("All") }
             filters.forEach { filter ->
-                val isSelected = selected == filter
+                val isSelected = selectedFilter == filter
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .background(if (isSelected) AccentBlue else SurfaceVariantDark)
                         .border(1.dp, if (isSelected) AccentBlue else CardBorderDark, RoundedCornerShape(20.dp))
-                        .clickable { selected = filter }
+                        .clickable { selectedFilter = filter }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
@@ -95,9 +101,15 @@ fun HistoryScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
-            allHistory.forEachIndexed { i, item ->
-                HistoryItemCard(item = item, onClick = { onItemClick(item.id) })
-                if (i < allHistory.lastIndex) Spacer(Modifier.height(8.dp))
+            if (filteredHistory.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No history found for $selectedFilter", color = TextTertiary)
+                }
+            } else {
+                filteredHistory.forEachIndexed { i, item ->
+                    HistoryItemCard(item = item, onClick = { onItemClick(item) })
+                    if (i < filteredHistory.lastIndex) Spacer(Modifier.height(8.dp))
+                }
             }
             Spacer(Modifier.height(16.dp))
         }

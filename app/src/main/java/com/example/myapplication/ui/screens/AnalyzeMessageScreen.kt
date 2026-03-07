@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentPaste
@@ -23,7 +25,11 @@ import com.example.myapplication.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
+fun AnalyzeMessageScreen(
+    onBack: () -> Unit,
+    onAnalyze: (String) -> Unit,
+    isLoading: Boolean = false
+) {
     var messageText by remember { mutableStateOf("") }
     val maxChars = 5000
 
@@ -36,18 +42,47 @@ fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Outlined.Info, contentDescription = "Info")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = BackgroundDark,
                     titleContentColor = TextPrimary,
-                    navigationIconContentColor = TextPrimary,
-                    actionIconContentColor = TextSecondary
+                    navigationIconContentColor = TextPrimary
                 )
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BackgroundDark)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .navigationBarsPadding()
+            ) {
+                Button(
+                    onClick = { if (messageText.isNotBlank()) onAnalyze(messageText) },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                    enabled = messageText.isNotBlank() && !isLoading
+                ) {
+                    if (isLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text("Analyzing... This should take a while", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.ContentPaste, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Analyze Now", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
         },
         containerColor = BackgroundDark
     ) { padding ->
@@ -55,6 +90,7 @@ fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Text(
@@ -93,6 +129,7 @@ fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
                         ) 
                     },
                     modifier = Modifier.fillMaxSize(),
+                    enabled = !isLoading,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
@@ -139,7 +176,7 @@ fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
                     color = AccentBlue,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { messageText = "" }
+                    modifier = Modifier.clickable { if (!isLoading) messageText = "" }
                 )
             }
 
@@ -173,20 +210,8 @@ fun AnalyzeMessageScreen(onBack: () -> Unit, onAnalyze: () -> Unit) {
                     }
                 }
             }
-
-            Spacer(Modifier.weight(1f))
-
-            // Bottom action
-            Button(
-                onClick = onAnalyze,
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
-            ) {
-                Icon(Icons.Filled.ContentPaste, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Analyze Now", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
+            
+            Spacer(Modifier.height(40.dp))
         }
     }
 }

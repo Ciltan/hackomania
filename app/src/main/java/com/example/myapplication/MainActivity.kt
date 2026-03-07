@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,17 +10,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.background
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.model.AnalysisResult
 import com.example.myapplication.model.MockData
 import com.example.myapplication.navigation.Screen
 import com.example.myapplication.ui.components.FactCheckerBottomNav
 import com.example.myapplication.ui.screens.*
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.viewmodel.AnalysisState
+import com.example.myapplication.viewmodel.AnalysisViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,16 +37,34 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun FactCheckerApp() {
+    val context = LocalContext.current
+    val viewModel: AnalysisViewModel = viewModel()
+    val analysisState by viewModel.state.collectAsStateWithLifecycle()
+
     // Current main tab
     var currentTab by remember { mutableStateOf<Screen>(Screen.Home) }
 
-    // Sub-navigation states
-    var currentResult by remember { mutableStateOf<AnalysisResult?>(null) }
+    // The result to show — can come from either the live API or mock history items
+    var displayedResult by remember { mutableStateOf<AnalysisResult?>(null) }
     var showBrowser by remember { mutableStateOf(false) }
     var showResults by remember { mutableStateOf(false) }
 
-    // Whether bottom nav is visible (hidden on browser/results detail screens)
     val showBottomNav = !showBrowser && !showResults
+
+    // When the ViewModel emits a Success, capture the result and show the screen
+    LaunchedEffect(analysisState) {
+        when (val state = analysisState) {
+            is AnalysisState.Success -> {
+                displayedResult = state.result
+                showResults = true
+            }
+            is AnalysisState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
+            else -> { /* Idle / Loading — handled inline */ }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -54,25 +74,33 @@ fun FactCheckerApp() {
                 FactCheckerBottomNav(
                     currentRoute = currentTab.route,
                     onNavigate = { screen ->
-                        showResults = false
-                        showBrowser = false
                         currentTab = screen
                     }
                 )
             }
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(bottom = if (showBottomNav) paddingValues.calculateBottomPadding() else androidx.compose.ui.unit.Dp(0f))) {
+        Box(
+            modifier = Modifier.padding(
+                bottom = if (showBottomNav) paddingValues.calculateBottomPadding()
+                         else androidx.compose.ui.unit.Dp(0f)
+            )
+        ) {
+
             // Results detail screen
             AnimatedVisibility(
                 visible = showResults,
                 enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)),
                 exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300))
             ) {
-                currentResult?.let { result ->
+                displayedResult?.let { result ->
                     ResultsScreen(
                         result = result,
-                        onBack = { showResults = false },
+                        onBack = {
+                            showResults = false
+                            viewModel.resetState()
+                            displayedResult = null
+                        },
                         onViewSource = {
                             showResults = false
                             showBrowser = true
@@ -89,10 +117,9 @@ fun FactCheckerApp() {
             ) {
                 BrowserScreen(
                     onBack = { showBrowser = false },
-                    onCheckCredibility = {
+                    onCheckCredibility = { url: String ->
                         showBrowser = false
-                        currentResult = MockData.lowCredibilityResult
-                        showResults = true
+                        viewModel.analyze(url)
                     }
                 )
             }
@@ -108,17 +135,20 @@ fun FactCheckerApp() {
                 ) { tab ->
                     when (tab) {
                         Screen.Home -> HomeScreen(
-                            onCheckCredibility = { text ->
-                                val result = MockData.analyzeText(text)
-                                currentResult = result
-                                showResults = true
+                            isLoading = analysisState is AnalysisState.Loading,
+                            onCheckCredibility = { input ->
+                                // Call the real backend API
+                                viewModel.analyze(input)
                             },
                             onRecentItemClick = { id ->
+                                // Recent items still use mock data as placeholders
+                                // until history is persisted in the backend DB
                                 val result = when (id) {
                                     "1" -> MockData.highCredibilityResult
-                                    else -> MockData.highCredibilityResult
+                                    "2" -> MockData.highCredibilityResult
+                                    else -> MockData.lowCredibilityResult
                                 }
-                                currentResult = result
+                                displayedResult = result
                                 showResults = true
                             },
                             onNavigateUploadScreenshot = { currentTab = Screen.UploadScreenshot },
@@ -128,27 +158,40 @@ fun FactCheckerApp() {
                         )
                         Screen.History -> HistoryScreen(
                             onItemClick = { _ ->
-                                currentResult = MockData.highCredibilityResult
+                                displayedResult = MockData.highCredibilityResult
                                 showResults = true
                             }
                         )
-                        Screen.Explore -> ExploreScreen(
-                            onTopicClick = { _ ->
-                                showBrowser = true
-                            }
-                        )
+                        Screen.Explore -> ExploreScreen()
                         Screen.Settings -> SettingsScreen()
                         Screen.UploadScreenshot -> UploadScreenshotScreen(
                             onBack = { currentTab = Screen.Home },
-                            onAnalyze = { 
-                                currentResult = MockData.lowCredibilityResult
-                                showResults = true
-                            }
+                            onAnalyze = { url, uri ->
+                                if (uri != null) {
+                                    viewModel.analyzeFile(context, uri)
+                                } else if (url != null) {
+                                    viewModel.analyze(url)
+                                }
+                            },
+                            isLoading = analysisState is AnalysisState.Loading
                         )
-                        Screen.VerifyVideo -> VerifyVideoScreen(onBack = { currentTab = Screen.Home })
+                        Screen.VerifyVideo -> VerifyVideoScreen(
+                            onBack = { currentTab = Screen.Home },
+                            onAnalyze = { url, uri ->
+                                if (uri != null) {
+                                    viewModel.analyzeFile(context, uri)
+                                } else if (url != null) {
+                                    viewModel.analyze(url)
+                                }
+                            },
+                            isLoading = analysisState is AnalysisState.Loading
+                        )
                         Screen.AnalyzeMessage -> AnalyzeMessageScreen(
                             onBack = { currentTab = Screen.Home },
-                            onAnalyze = { currentTab = Screen.ScamAnalysis }
+                            onAnalyze = { text ->
+                                viewModel.analyze(text)
+                            },
+                            isLoading = analysisState is AnalysisState.Loading
                         )
                         Screen.ScamAnalysis -> ScamAnalysisScreen(onBack = { currentTab = Screen.AnalyzeMessage })
                         Screen.EmergencyHub -> EmergencyHubScreen(
@@ -157,13 +200,12 @@ fun FactCheckerApp() {
                         )
                         Screen.FactCheckDetail -> FactCheckDetailScreen(onBack = { currentTab = Screen.EmergencyHub })
                         else -> HomeScreen(
-                            onCheckCredibility = { text ->
-                                val result = MockData.analyzeText(text)
-                                currentResult = result
-                                showResults = true
+                            isLoading = analysisState is AnalysisState.Loading,
+                            onCheckCredibility = { input ->
+                                viewModel.analyze(input)
                             },
                             onRecentItemClick = { _ ->
-                                currentResult = MockData.highCredibilityResult
+                                displayedResult = MockData.highCredibilityResult
                                 showResults = true
                             }
                         )
@@ -171,18 +213,5 @@ fun FactCheckerApp() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun PlaceholderScreen(title: String, onBack: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().background(com.example.myapplication.ui.theme.BackgroundDark),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        androidx.compose.material3.Text(title, color = androidx.compose.ui.graphics.Color.White, fontSize = 24.sp)
-        Spacer(Modifier.height(16.dp))
-        androidx.compose.material3.Button(onClick = onBack) { androidx.compose.material3.Text("Go Back") }
     }
 }
