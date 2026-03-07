@@ -188,6 +188,7 @@ fun HomeScreen(
             }
         }
 
+<<<<<<< HEAD
         Spacer(Modifier.height(24.dp))
 
         // Actions Section
@@ -224,6 +225,8 @@ fun HomeScreen(
             )
         }
 
+=======
+>>>>>>> cb8d8e4d3b3b3f38bb070ec3c11d6eb2a74d73d8
         Spacer(Modifier.height(28.dp))
 
         // Recent Analysis Section
@@ -444,6 +447,7 @@ private fun HowItWorksSection() {
         }
     }
 }
+<<<<<<< HEAD
 
 @Composable
 fun FeatureCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
@@ -482,3 +486,5 @@ fun FeatureCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVe
         )
     }
 }
+=======
+>>>>>>> cb8d8e4d3b3b3f38bb070ec3c11d6eb2a74d73d8
