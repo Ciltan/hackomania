@@ -10,11 +10,16 @@ data class ApiSourceCredibility(
     @SerializedName("has_trust_badge") val hasTrustBadge: Boolean
 )
 
+data class ApiClaimSource(
+    @SerializedName("name") val name: String,
+    @SerializedName("url") val url: String?
+)
+
 data class ApiClaimBreakdown(
     @SerializedName("title") val title: String,
     @SerializedName("description") val description: String,
     @SerializedName("status") val status: String, // "VERIFIED", "CONTEXT_NEEDED", "FALSE"
-    @SerializedName("sources") val sources: List<String>
+    @SerializedName("sources") val sources: List<ApiClaimSource>
 )
 
 data class ApiLateralReadingSource(
@@ -45,4 +50,12 @@ data class ApiAnalysisResponse(
     @SerializedName("claims_breakdown") val claimsBreakdown: List<ApiClaimBreakdown> = emptyList(),
     @SerializedName("lateral_reading") val lateralReading: List<ApiLateralReadingSource> = emptyList(),
     @SerializedName("evidence_analysis_summary") val evidenceAnalysisSummary: String
+)
+
+data class ApiTranslateResponse(
+    @SerializedName("translated_text") val translatedText: String
+)
+
+data class ApiChatResponse(
+    @SerializedName("answer") val answer: String
 )

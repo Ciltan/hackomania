@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalUriHandler
 import com.example.myapplication.model.*
 import com.example.myapplication.ui.theme.*
 
@@ -30,7 +31,7 @@ import com.example.myapplication.ui.theme.*
 fun ResultsScreen(
     result: AnalysisResult,
     onBack: () -> Unit,
-    onViewSource: () -> Unit
+    onViewSource: (String) -> Unit
 ) {
     val accentColor = when (result.credibilityLevel) {
         CredibilityLevel.HIGH -> SuccessGreen
@@ -162,7 +163,7 @@ fun ResultsScreen(
             Text("Claims Breakdown", style = MaterialTheme.typography.titleMedium, color = TextPrimary, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             result.claims.forEachIndexed { index, claim ->
-                ClaimCard(claim = claim)
+                ClaimCard(claim = claim, onViewSource = onViewSource)
                 if (index < result.claims.lastIndex) Spacer(Modifier.height(10.dp))
             }
         }
@@ -184,7 +185,7 @@ fun ResultsScreen(
             Spacer(Modifier.height(12.dp))
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                 OutlinedButton(
-                    onClick = onViewSource,
+                    onClick = { onViewSource(result.sourceUrl) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, AccentBlue.copy(alpha = 0.5f)),
@@ -214,7 +215,7 @@ fun ScoreArcCanvas(score: Float, color: Color, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ClaimCard(claim: Claim) {
+private fun ClaimCard(claim: Claim, onViewSource: (String) -> Unit) {
     val verdictColor = when (claim.verdict) {
         ClaimVerdict.VERIFIED -> SuccessGreen
         ClaimVerdict.MISLEADING -> WarningOrange
@@ -239,6 +240,7 @@ private fun ClaimCard(claim: Claim) {
         ClaimVerdict.FALSE -> Icons.Filled.Cancel
         ClaimVerdict.UNVERIFIABLE -> Icons.Filled.HelpOutline
     }
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
@@ -270,7 +272,15 @@ private fun ClaimCard(claim: Claim) {
             Spacer(Modifier.height(4.dp))
             claim.sources.forEach { source ->
                 Row(
-                    modifier = Modifier.padding(vertical = 3.dp).clickable {},
+                    modifier = Modifier
+                        .padding(vertical = 3.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { 
+                            if (source.url.isNotEmpty()) {
+                                onViewSource(source.url)
+                            }
+                        }
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Outlined.Link, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(14.dp))

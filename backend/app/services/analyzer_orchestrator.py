@@ -1,8 +1,8 @@
-from schemas.payloads import AnalyzeRequest, AnalysisResponse, SourceCredibility
+from schemas.payloads import AnalyzeRequest, AnalysisResponse, SourceCredibility, OriginalSubmission
 from services.scraper_service import scrape_url
 from services.dataset_service import dataset_check
 from services.article_dataset_service import article_dataset
-from services.llm_service import extract_primary_claim, formulate_verdict
+from services.llm_service import extract_primary_claim, formulate_verdict, filter_evidence_relevance
 from services.search_service import search_web_for_evidence
 import urllib.parse
 
@@ -40,12 +40,20 @@ def analyze_pipeline(request: AnalyzeRequest, domain_override: str = None) -> An
         domain_context = f"The claim originates from the domain (detected from image/video): {domain_override}."
         domain_credibility = dataset_check.check_domain(domain_override)
     
-    # 4. Find related fact-checked articles (Local Dataset + Web Fallback)
-    related_articles = article_dataset.search_related(llm_claim.claim, max_results=4)
+    # 4. Find related fact-checked articles (Local Dataset + LLM Filter + Web Fallback)
+    related_articles = article_dataset.search_related(llm_claim.claim, max_results=5)
     
-    # If we have very few high-quality local results, supplement with web search
+    # Use LLM to vigorously filter out irrelevant matches gathered from the local dataset step
+    if related_articles:
+        related_articles = filter_evidence_relevance(llm_claim.claim, related_articles)
+    
+    # If we have very few high-quality local results left after filtering, supplement with web search
     if len(related_articles) < 2:
-        web_results = search_web_for_evidence(llm_claim.claim, max_results=3)
+        from services.llm_service import extract_keywords
+        search_query = extract_keywords(llm_claim.claim)
+        print(f"  [DuckDuckGo] Searching for keywords: '{search_query}'")
+        
+        web_results = search_web_for_evidence(search_query, max_results=3)
         for res in web_results:
             # Transform web result to match article format
             related_articles.append({
@@ -58,10 +66,13 @@ def analyze_pipeline(request: AnalyzeRequest, domain_override: str = None) -> An
                 "context": f"Search Result from {res['source']}"
             })
 
-    print(f"\n[EVIDENCE SOURCE] Gathering evidence for claim: '{llm_claim.claim}'", flush=True)
+    print("\n" + "="*50)
+    print("FINAL COMPILED EVIDENCE SOURCES:")
     for i, a in enumerate(related_articles):
         source_type = "Web Search" if "Web Evidence:" in a['name'] else "FACTors Dataset"
-        print(f"  --> {i+1}: [{source_type}] {a['name']}", flush=True)
+        title = a.get("statement") or a.get("title") or a.get("name") or "Unknown Title"
+        print(f"[{i+1}] [{source_type}] {title}")
+    print("="*50 + "\n", flush=True)
     # 5. Final Verdict and Formatting
     try:
         final_verdict = formulate_verdict(
@@ -70,6 +81,11 @@ def analyze_pipeline(request: AnalyzeRequest, domain_override: str = None) -> An
             claim=llm_claim.claim,
             domain_credibility=domain_credibility,
             related_articles=related_articles[:6]  # Cap results for LLM context
+        )
+        # Populate the original submission so the app can display it
+        final_verdict.original_submission = OriginalSubmission(
+            content=content_to_analyze[:2000],
+            metadata=f"{request.url or 'Direct Text'} • Just now"
         )
         return final_verdict
     except Exception as e:

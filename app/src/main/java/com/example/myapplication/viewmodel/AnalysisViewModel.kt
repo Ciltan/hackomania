@@ -28,6 +28,18 @@ class AnalysisViewModel : ViewModel() {
     private val _state = MutableStateFlow<AnalysisState>(AnalysisState.Idle)
     val state: StateFlow<AnalysisState> = _state.asStateFlow()
 
+    private val _translatedText = MutableStateFlow<String?>(null)
+    val translatedText: StateFlow<String?> = _translatedText.asStateFlow()
+
+    private val _isTranslating = MutableStateFlow(false)
+    val isTranslating: StateFlow<Boolean> = _isTranslating.asStateFlow()
+
+    private val _chatAnswer = MutableStateFlow<String?>(null)
+    val chatAnswer: StateFlow<String?> = _chatAnswer.asStateFlow()
+
+    private val _isChatLoading = MutableStateFlow(false)
+    val isChatLoading: StateFlow<Boolean> = _isChatLoading.asStateFlow()
+
     fun analyze(input: String) {
         viewModelScope.launch {
             _state.value = AnalysisState.Loading
@@ -79,7 +91,55 @@ class AnalysisViewModel : ViewModel() {
         }
     }
 
+    fun translateArticle(text: String, targetLanguage: String) {
+        viewModelScope.launch {
+            _isTranslating.value = true
+            try {
+                val langBody = targetLanguage.toRequestBody("text/plain".toMediaTypeOrNull())
+                val isUrl = text.startsWith("http://") || text.startsWith("https://")
+                
+                val response = if (isUrl) {
+                    val urlBody = text.toRequestBody("text/plain".toMediaTypeOrNull())
+                    RetrofitClient.api.translate(url = urlBody, targetLanguage = langBody)
+                } else {
+                    val textBody = text.toRequestBody("text/plain".toMediaTypeOrNull())
+                    RetrofitClient.api.translate(text = textBody, targetLanguage = langBody)
+                }
+                
+                _translatedText.value = response.translatedText
+            } catch (e: Exception) {
+                _translatedText.value = "Translation failed: ${e.localizedMessage}"
+            } finally {
+                _isTranslating.value = false
+            }
+        }
+    }
+
+    fun askFollowUp(claim: String, analysisSummary: String, question: String) {
+        viewModelScope.launch {
+            _isChatLoading.value = true
+            _chatAnswer.value = null
+            try {
+                val claimBody = claim.toRequestBody("text/plain".toMediaTypeOrNull())
+                val summaryBody = analysisSummary.toRequestBody("text/plain".toMediaTypeOrNull())
+                val questionBody = question.toRequestBody("text/plain".toMediaTypeOrNull())
+                val response = RetrofitClient.api.chat(
+                    claim = claimBody,
+                    analysisSummary = summaryBody,
+                    question = questionBody
+                )
+                _chatAnswer.value = response.answer
+            } catch (e: Exception) {
+                _chatAnswer.value = "Error: ${e.localizedMessage}"
+            } finally {
+                _isChatLoading.value = false
+            }
+        }
+    }
+
     fun resetState() {
         _state.value = AnalysisState.Idle
+        _translatedText.value = null
+        _chatAnswer.value = null
     }
 }

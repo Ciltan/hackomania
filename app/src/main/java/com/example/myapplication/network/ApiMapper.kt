@@ -14,9 +14,12 @@ object ApiMapper {
             id = UUID.randomUUID().toString(),
             originalText = apiResponse.originalSubmission?.content ?: "",
             capturedTimeAgo = "Just now",
-            credibilityLevel = when (apiResponse.credibilityLevel) {
-                "RELIABLE" -> CredibilityLevel.HIGH
-                "MISLEADING" -> CredibilityLevel.LOW
+            credibilityLevel = when {
+                apiResponse.credibilityLevel == "RELIABLE" -> CredibilityLevel.HIGH
+                apiResponse.credibilityLevel == "MISLEADING" -> CredibilityLevel.LOW
+                // If the score is very low but backend returned UNVERIFIED, treat as LOW (misleading)
+                apiResponse.credibilityScore * 100 < 40 -> CredibilityLevel.LOW
+                apiResponse.credibilityScore * 100 >= 70 -> CredibilityLevel.HIGH
                 else -> CredibilityLevel.UNVERIFIED
             },
             credibilityScore = (apiResponse.credibilityScore * 100).toInt(),
@@ -24,8 +27,10 @@ object ApiMapper {
             claims = apiResponse.claimsBreakdown.map { apiClaim ->
                 Claim(
                     text = apiClaim.title + ": " + apiClaim.description,
-                    sources = apiClaim.sources.map { url ->
-                        Source(title = "Source", url = url)
+                    sources = apiClaim.sources.mapNotNull { source ->
+                        source.url?.let {
+                            Source(title = source.name, url = it)
+                        }
                     },
                     verdict = when (apiClaim.status) {
                         "VERIFIED" -> ClaimVerdict.VERIFIED

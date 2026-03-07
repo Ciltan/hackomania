@@ -63,6 +63,23 @@ def extract_primary_claim(text: str) -> ExtractedClaim:
         print(f"Error extracting claim: {e}")
         return ExtractedClaim(claim="Unable to extract claim.", context="Error parsing text with LLM.")
 
+def extract_keywords(claim: str) -> str:
+    """Uses LLM to extract 3-5 core search keywords from a verbose claim to optimize web search."""
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": "Extract 3 to 5 critical search keywords from the given claim. Return ONLY the keywords separated by spaces. Do not use quotes or punctuation."},
+                {"role": "user", "content": claim}
+            ],
+            temperature=0.0
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error extracting keywords: {e}")
+        # On error, just return the first 5 words of the claim as a fallback
+        return " ".join(claim.split()[:5])
+
 
 def formulate_verdict(original_text: str, domain_context: str, claim: str, domain_credibility: dict, related_articles: list = None) -> AnalysisResponse:
     """Uses LLM and structural outputs to generate the final analytical json matching the schema."""
@@ -149,7 +166,15 @@ As a specialized fact-checking AI, you evaluate claims by synthesizing provided 
                                         "status": {"type": "string", "enum": ["VERIFIED", "CONTEXT_NEEDED", "FALSE"]},
                                         "sources": {
                                             "type": "array",
-                                            "items": {"type": "string"}
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {"type": "string"},
+                                                    "url": {"type": ["string", "null"]}
+                                                },
+                                                "required": ["name", "url"],
+                                                "additionalProperties": False
+                                            }
                                         }
                                     },
                                     "required": ["title", "description", "status", "sources"],
@@ -196,3 +221,66 @@ As a specialized fact-checking AI, you evaluate claims by synthesizing provided 
         traceback.print_exc()
         print(f"Error formulating verdict: {e}")
         raise e
+
+def filter_evidence_relevance(claim: str, articles: list) -> list:
+    """Uses LLM to filter a list of candidate articles, discarding completely irrelevant ones."""
+    if not articles:
+        return []
+        
+    try:
+        articles_context = ""
+        for i, article in enumerate(articles):
+            articles_context += f"\n[{i}] Title: {article.get('context', '')}\nClaim Checked: {article.get('statement', '')}\n"
+            
+        system_prompt = f"""
+        You are a relevance filtering assistant. Your task is to look at a user's `Primary Claim` and a list of `Candidate Articles`.
+        Return ONLY the list of indices `[0, 1, ...]` of the candidate articles that are genuinely relevant to verifying or debunking the primary claim.
+        If an article just shares a keyword but is talking about a completely different event or claim, EXCLUDE its index.
+        If none are relevant, return an empty list `[]`.
+        
+        Candidate Articles:
+        {articles_context}
+        """
+        
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Primary Claim: {claim}"}
+            ],
+            tools=[{
+                "type": "function",
+                "function": {
+                    "name": "filter_articles",
+                    "description": "Selects the indices of relevant articles.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "relevant_indices": {
+                                "type": "array",
+                                "items": {"type": "integer"}
+                            }
+                        },
+                        "required": ["relevant_indices"],
+                        "additionalProperties": False
+                    }
+                }
+            }],
+            tool_choice={"type": "function", "function": {"name": "filter_articles"}}
+        )
+        
+        tool_call = response.choices[0].message.tool_calls[0]
+        args = json.loads(tool_call.function.arguments)
+        relevant_indices = args.get("relevant_indices", [])
+        
+        # Guard against LLM hallucinating out-of-bounds indices
+        filtered_articles = [articles[i] for i in relevant_indices if 0 <= i < len(articles)]
+        
+        print(f"[LLM FILTER] Original count: {len(articles)} -> Filtered count: {len(filtered_articles)}")
+        return filtered_articles
+        
+    except Exception as e:
+        print(f"Error during evidence filtering: {e}")
+        # On error, safely return the original unfiltered list to not break the pipeline
+        return articles
+

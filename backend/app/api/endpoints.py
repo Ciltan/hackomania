@@ -94,3 +94,71 @@ async def analyze_content(
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+
+@router.post("/translate")
+async def translate_text(
+    text: Optional[str] = Form(None),
+    url: Optional[str] = Form(None),
+    target_language: str = Form("Chinese")
+):
+    """
+    Translate article text into a target language using AI.
+    Accepts either raw text or a URL to scrape first.
+    """
+    from services.llm_service import client
+    from core.config import OPENAI_MODEL
+    from services.scraper_service import scrape_url
+    
+    try:
+        content = text
+        # If a URL was provided, scrape the page text first
+        if url and not content:
+            content = scrape_url(url)
+        
+        if not content:
+            raise HTTPException(status_code=400, detail="No text or valid URL provided for translation.")
+        
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": f"You are a professional translator. Translate the following text into {target_language}. Return ONLY the translated text, nothing else. Preserve paragraph breaks."},
+                {"role": "user", "content": content[:10000]}
+            ]
+        )
+        translated = response.choices[0].message.content
+        return {"translated_text": translated}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation error: {str(e)}")
+
+
+@router.post("/chat")
+async def chat_followup(
+    claim: str = Form(...),
+    analysis_summary: str = Form(...),
+    question: str = Form(...)
+):
+    """
+    Allow users to ask follow-up questions about the credibility analysis.
+    """
+    from services.llm_service import client
+    from core.config import OPENAI_MODEL
+    
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": f"""You are a fact-checking assistant. The user previously analyzed the following claim and received an analysis. 
+Answer their follow-up question clearly and concisely in 2-3 sentences.
+
+Original Claim: {claim}
+Analysis Summary: {analysis_summary}"""},
+                {"role": "user", "content": question}
+            ]
+        )
+        answer = response.choices[0].message.content
+        return {"answer": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")

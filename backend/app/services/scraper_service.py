@@ -14,12 +14,35 @@ def scrape_url(url: str) -> str:
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Remove script and style elements
-        for script in soup(["script", "style", "nav", "footer", "header"]):
-            script.decompose()
+        # Aggressively remove noise elements
+        for element in soup([
+            "script", "style", "nav", "footer", "header", "aside", 
+            "form", "iframe", "noscript", "button"
+        ]):
+            element.decompose()
+            
+        # Also remove elements often used for accessibility skip links or hidden text
+        for element in soup.find_all(class_=re.compile(r'skip|hidden|visually-hidden|sr-only', re.I)):
+            element.decompose()
 
-        # Get text
-        text = soup.get_text(separator=' ')
+        # Try to find the main article content
+        main_content = None
+        
+        # Strategy 1: Look for <article> tag
+        if soup.find("article"):
+            main_content = soup.find("article")
+        # Strategy 2: Look for <main> tag
+        elif soup.find("main"):
+            main_content = soup.find("main")
+        # Strategy 3: Look for common content wrappers
+        elif soup.find(class_=re.compile(r'article|post-content|main-content|story-body', re.I)):
+            main_content = soup.find(class_=re.compile(r'article|post-content|main-content|story-body', re.I))
+        # Fallback: Use the whole body
+        else:
+            main_content = soup.body if soup.body else soup
+
+        # Get text from the selected container
+        text = main_content.get_text(separator=' ')
 
         # Break into lines and remove leading and trailing space on each
         lines = (line.strip() for line in text.splitlines())

@@ -14,4 +14,20 @@ interface ApiService {
         @Part("text") text: RequestBody? = null,
         @Part file: MultipartBody.Part? = null
     ): ApiAnalysisResponse
+
+    @Multipart
+    @POST("api/v1/translate")
+    suspend fun translate(
+        @Part("text") text: RequestBody? = null,
+        @Part("url") url: RequestBody? = null,
+        @Part("target_language") targetLanguage: RequestBody
+    ): ApiTranslateResponse
+
+    @Multipart
+    @POST("api/v1/chat")
+    suspend fun chat(
+        @Part("claim") claim: RequestBody,
+        @Part("analysis_summary") analysisSummary: RequestBody,
+        @Part("question") question: RequestBody
+    ): ApiChatResponse
 }

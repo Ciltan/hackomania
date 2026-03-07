@@ -6,11 +6,15 @@ class SourceCredibility(BaseModel):
     description: str = Field(..., description="Short text about the source's standards")
     has_trust_badge: bool = Field(False, description="Whether this is a highly trusted source")
 
+class ClaimSource(BaseModel):
+    name: str = Field(..., description="Name or title of the source article/document")
+    url: Optional[str] = Field(None, description="URL to the source if available")
+
 class ClaimBreakdown(BaseModel):
     title: str = Field(..., description="Short title like 'Verified: Energy Subsidies'")
     description: str = Field(..., description="Explanation of the specific claim")
     status: Literal["VERIFIED", "CONTEXT_NEEDED", "FALSE"] = Field(..., description="The status of the claim")
-    sources: List[str] = Field(..., description="Links to sources for this specific claim")
+    sources: List[ClaimSource] = Field(..., description="Links to sources for this specific claim")
 
 class LateralReadingSource(BaseModel):
     name: str = Field(..., description="Name of cross-referenced source (e.g., Reuters, BBC)")

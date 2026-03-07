@@ -47,20 +47,27 @@ fun FactCheckerApp() {
     // The result to show — can come from either the live API or mock history items
     var displayedResult by remember { mutableStateOf<AnalysisResult?>(null) }
     var showBrowser by remember { mutableStateOf(false) }
+    var browserUrl by remember { mutableStateOf("") }
     var showResults by remember { mutableStateOf(false) }
 
     val showBottomNav = !showBrowser && !showResults
 
     // When the ViewModel emits a Success, capture the result and show the screen
+    // BUT skip if the browser or Explore tab is active (they have their own popups)
     LaunchedEffect(analysisState) {
+        val isExploreActive = currentTab == Screen.Explore && !showBrowser && !showResults
         when (val state = analysisState) {
             is AnalysisState.Success -> {
-                displayedResult = state.result
-                showResults = true
+                if (!showBrowser && !isExploreActive) {
+                    displayedResult = state.result
+                    showResults = true
+                }
             }
             is AnalysisState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-                viewModel.resetState()
+                if (!showBrowser && !isExploreActive) {
+                    Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                    viewModel.resetState()
+                }
             }
             else -> { /* Idle / Loading — handled inline */ }
         }
@@ -87,7 +94,103 @@ fun FactCheckerApp() {
             )
         ) {
 
-            // Results detail screen
+            // Main tab screens — ALWAYS composed so WebView persists
+            AnimatedContent(
+                targetState = currentTab,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
+                },
+                label = "tabTransition"
+            ) { tab ->
+                when (tab) {
+                    Screen.Home -> HomeScreen(
+                        isLoading = analysisState is AnalysisState.Loading,
+                        onCheckCredibility = { input ->
+                            // Call the real backend API
+                            viewModel.analyze(input)
+                        },
+                        onRecentItemClick = { id ->
+                            // Recent items still use mock data as placeholders
+                            // until history is persisted in the backend DB
+                            val result = when (id) {
+                                "1" -> MockData.highCredibilityResult
+                                "2" -> MockData.highCredibilityResult
+                                else -> MockData.lowCredibilityResult
+                            }
+                            displayedResult = result
+                            showResults = true
+                        },
+                        onNavigateUploadScreenshot = { currentTab = Screen.UploadScreenshot },
+                        onNavigateVerifyVideo = { currentTab = Screen.VerifyVideo },
+                        onNavigateAnalyzeMessage = { currentTab = Screen.AnalyzeMessage },
+                        onNavigateEmergencyHub = { currentTab = Screen.EmergencyHub }
+                    )
+                    Screen.History -> HistoryScreen(
+                        onItemClick = { _ ->
+                            displayedResult = MockData.highCredibilityResult
+                            showResults = true
+                        }
+                    )
+                    Screen.Explore -> ExploreScreen(
+                        viewModel = viewModel,
+                        onViewAnalysis = {
+                            val state = viewModel.state.value
+                            if (state is AnalysisState.Success) {
+                                displayedResult = state.result
+                                showResults = true
+                            }
+                        }
+                    )
+                    Screen.Settings -> SettingsScreen()
+                    Screen.UploadScreenshot -> UploadScreenshotScreen(
+                        onBack = { currentTab = Screen.Home },
+                        onAnalyze = { url, uri ->
+                            if (uri != null) {
+                                viewModel.analyzeFile(context, uri)
+                            } else if (url != null) {
+                                viewModel.analyze(url)
+                            }
+                        },
+                        isLoading = analysisState is AnalysisState.Loading
+                    )
+                    Screen.VerifyVideo -> VerifyVideoScreen(
+                        onBack = { currentTab = Screen.Home },
+                        onAnalyze = { url, uri ->
+                            if (uri != null) {
+                                viewModel.analyzeFile(context, uri)
+                            } else if (url != null) {
+                                viewModel.analyze(url)
+                            }
+                        },
+                        isLoading = analysisState is AnalysisState.Loading
+                    )
+                    Screen.AnalyzeMessage -> AnalyzeMessageScreen(
+                        onBack = { currentTab = Screen.Home },
+                        onAnalyze = { text ->
+                            viewModel.analyze(text)
+                        },
+                        isLoading = analysisState is AnalysisState.Loading
+                    )
+                    Screen.ScamAnalysis -> ScamAnalysisScreen(onBack = { currentTab = Screen.AnalyzeMessage })
+                    Screen.EmergencyHub -> EmergencyHubScreen(
+                        onBack = { currentTab = Screen.Home },
+                        onRumorClick = { currentTab = Screen.FactCheckDetail }
+                    )
+                    Screen.FactCheckDetail -> FactCheckDetailScreen(onBack = { currentTab = Screen.EmergencyHub })
+                    else -> HomeScreen(
+                        isLoading = analysisState is AnalysisState.Loading,
+                        onCheckCredibility = { input ->
+                            viewModel.analyze(input)
+                        },
+                        onRecentItemClick = { _ ->
+                            displayedResult = MockData.highCredibilityResult
+                            showResults = true
+                        }
+                    )
+                }
+            }
+
+            // Results detail screen — OVERLAID on top of tabs
             AnimatedVisibility(
                 visible = showResults,
                 enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)),
@@ -98,10 +201,14 @@ fun FactCheckerApp() {
                         result = result,
                         onBack = {
                             showResults = false
-                            viewModel.resetState()
                             displayedResult = null
+                            // Only reset state if NOT coming from Explore tab
+                            if (currentTab != Screen.Explore) {
+                                viewModel.resetState()
+                            }
                         },
-                        onViewSource = {
+                        onViewSource = { url ->
+                            browserUrl = url
                             showResults = false
                             showBrowser = true
                         }
@@ -109,108 +216,21 @@ fun FactCheckerApp() {
                 }
             }
 
-            // Browser screen
+            // Browser screen — OVERLAID on top
             AnimatedVisibility(
                 visible = showBrowser,
                 enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)),
                 exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300))
             ) {
-                BrowserScreen(
-                    onBack = { showBrowser = false },
-                    onCheckCredibility = { url: String ->
+                ExploreScreen(
+                    viewModel = viewModel,
+                    initialUrl = browserUrl,
+                    isOverlay = true,
+                    onOverlayBack = {
                         showBrowser = false
-                        viewModel.analyze(url)
+                        showResults = true  // Go back to the analysis screen
                     }
                 )
-            }
-
-            // Main tab screens
-            if (!showResults && !showBrowser) {
-                AnimatedContent(
-                    targetState = currentTab,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
-                    },
-                    label = "tabTransition"
-                ) { tab ->
-                    when (tab) {
-                        Screen.Home -> HomeScreen(
-                            isLoading = analysisState is AnalysisState.Loading,
-                            onCheckCredibility = { input ->
-                                // Call the real backend API
-                                viewModel.analyze(input)
-                            },
-                            onRecentItemClick = { id ->
-                                // Recent items still use mock data as placeholders
-                                // until history is persisted in the backend DB
-                                val result = when (id) {
-                                    "1" -> MockData.highCredibilityResult
-                                    "2" -> MockData.highCredibilityResult
-                                    else -> MockData.lowCredibilityResult
-                                }
-                                displayedResult = result
-                                showResults = true
-                            },
-                            onNavigateUploadScreenshot = { currentTab = Screen.UploadScreenshot },
-                            onNavigateVerifyVideo = { currentTab = Screen.VerifyVideo },
-                            onNavigateAnalyzeMessage = { currentTab = Screen.AnalyzeMessage },
-                            onNavigateEmergencyHub = { currentTab = Screen.EmergencyHub }
-                        )
-                        Screen.History -> HistoryScreen(
-                            onItemClick = { _ ->
-                                displayedResult = MockData.highCredibilityResult
-                                showResults = true
-                            }
-                        )
-                        Screen.Explore -> ExploreScreen()
-                        Screen.Settings -> SettingsScreen()
-                        Screen.UploadScreenshot -> UploadScreenshotScreen(
-                            onBack = { currentTab = Screen.Home },
-                            onAnalyze = { url, uri ->
-                                if (uri != null) {
-                                    viewModel.analyzeFile(context, uri)
-                                } else if (url != null) {
-                                    viewModel.analyze(url)
-                                }
-                            },
-                            isLoading = analysisState is AnalysisState.Loading
-                        )
-                        Screen.VerifyVideo -> VerifyVideoScreen(
-                            onBack = { currentTab = Screen.Home },
-                            onAnalyze = { url, uri ->
-                                if (uri != null) {
-                                    viewModel.analyzeFile(context, uri)
-                                } else if (url != null) {
-                                    viewModel.analyze(url)
-                                }
-                            },
-                            isLoading = analysisState is AnalysisState.Loading
-                        )
-                        Screen.AnalyzeMessage -> AnalyzeMessageScreen(
-                            onBack = { currentTab = Screen.Home },
-                            onAnalyze = { text ->
-                                viewModel.analyze(text)
-                            },
-                            isLoading = analysisState is AnalysisState.Loading
-                        )
-                        Screen.ScamAnalysis -> ScamAnalysisScreen(onBack = { currentTab = Screen.AnalyzeMessage })
-                        Screen.EmergencyHub -> EmergencyHubScreen(
-                            onBack = { currentTab = Screen.Home },
-                            onRumorClick = { currentTab = Screen.FactCheckDetail }
-                        )
-                        Screen.FactCheckDetail -> FactCheckDetailScreen(onBack = { currentTab = Screen.EmergencyHub })
-                        else -> HomeScreen(
-                            isLoading = analysisState is AnalysisState.Loading,
-                            onCheckCredibility = { input ->
-                                viewModel.analyze(input)
-                            },
-                            onRecentItemClick = { _ ->
-                                displayedResult = MockData.highCredibilityResult
-                                showResults = true
-                            }
-                        )
-                    }
-                }
             }
         }
     }
