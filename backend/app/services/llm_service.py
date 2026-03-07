@@ -72,11 +72,11 @@ def formulate_verdict(original_text: str, domain_context: str, claim: str, domai
         # Build the related articles context for lateral reading
         articles_context = ""
         if related_articles:
-            articles_context = "\n\nRelated Fact-Checked Articles (use these as lateral reading sources with their REAL URLs):\n"
+            articles_context = "\n\nProvided Evidence (use these EXACT sources for lateral reading):\n"
             for i, article in enumerate(related_articles, 1):
                 articles_context += f"""
-Article {i}:
-- Source: {article.get('name', 'PolitiFact')}
+Evidence {i}:
+- Source: {article.get('name', 'Web Source')}
 - URL: {article.get('url', '')}
 - Label: {article.get('label', 'unknown')} ({article.get('credibility_level', 'UNVERIFIED')})
 - Statement: {article.get('statement', '')}
@@ -94,10 +94,14 @@ As a specialized fact-checking AI, you evaluate claims by synthesizing provided 
 - `credibility_level`: EXACTLY ONE of: RELIABLE, MIXED, MISLEADING, FALSE, UNVERIFIED.
 
 ### Lateral Reading Logic
-- `is_corroborating`: Set to `true` if the fact-checker AGREES with the user's content.
+- `lateral_reading`: You MUST ONLY use the EXACT sources provided in the "Provided Evidence" section below. 
+  - DO NOT invent, hallucinate, or guess URLs.
+  - DO NOT create fake fact-checks. 
+  - If the "Provided Evidence" section is empty or irrelevant to the claim, leave the `lateral_reading` array EMPTY.
+- `is_corroborating`: Set to `true` if the evidence AGREES with the user's content.
   - **Example**: If the user says "Earth is flat" and the article says "Earth is flat is FALSE", set `is_corroborating: false`.
   - **Example**: If the user says "Earth is flat" and the article says "Earth is flat is TRUE", set `is_corroborating: true`.
-  - **Reverse Example**: If a fact-checker debunks a CONTRARY claim (e.g., "Vaccines are poison is FALSE"), that supports the user's claim that vaccines are safe → `is_corroborating: true`.
+  - **Reverse Example**: If a fact-checker debunks a CONTRARY claim (e.g., "Vaccines are poison is FALSE"), that supports the user's claim that vaccines are safe -> `is_corroborating: true`.
 
 ---
 **INPUT CONTEXT**
