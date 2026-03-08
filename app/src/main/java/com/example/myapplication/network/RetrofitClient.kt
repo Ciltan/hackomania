@@ -12,7 +12,11 @@ object RetrofitClient {
      *
      * Current setting: Physical device (LAN IP)
      */
+<<<<<<< HEAD
     private const val BASE_URL = "http://172.29.18.204:8000/"
+=======
+    private const val BASE_URL = "http://10.0.2.2:8000/"
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
 
     private val okHttpClient = okhttp3.OkHttpClient.Builder()
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)

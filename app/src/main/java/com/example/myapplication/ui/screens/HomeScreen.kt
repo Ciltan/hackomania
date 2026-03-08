@@ -24,17 +24,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+<<<<<<< HEAD
 import com.example.myapplication.model.AnalysisResult
 import com.example.myapplication.model.CredibilityLevel
 import com.example.myapplication.model.MockData
+=======
+import com.example.myapplication.model.CredibilityLevel
+import com.example.myapplication.model.MockData
+import com.example.myapplication.model.RecentAnalysis
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
 import com.example.myapplication.ui.theme.*
 
 @Composable
 fun HomeScreen(
     isLoading: Boolean = false,
+<<<<<<< HEAD
     history: List<AnalysisResult> = emptyList(),
     onCheckCredibility: (String) -> Unit,
     onRecentItemClick: (AnalysisResult) -> Unit,
+=======
+    onCheckCredibility: (String) -> Unit,
+    onRecentItemClick: (String) -> Unit,
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     onNavigateUploadScreenshot: () -> Unit = {},
     onNavigateVerifyVideo: () -> Unit = {},
     onNavigateAnalyzeMessage: () -> Unit = {},
@@ -156,8 +167,12 @@ fun HomeScreen(
                 }),
                 singleLine = false,
                 maxLines = 4,
+<<<<<<< HEAD
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading
+=======
+                shape = RoundedCornerShape(12.dp)
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             )
 
             Spacer(Modifier.height(12.dp))
@@ -184,8 +199,11 @@ fun HomeScreen(
                         color = Color.White,
                         strokeWidth = 2.dp
                     )
+<<<<<<< HEAD
                     Spacer(Modifier.width(12.dp))
                     Text("Analyzing...", fontWeight = FontWeight.SemiBold)
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                 } else {
                     Icon(
                         Icons.Filled.Shield,
@@ -254,12 +272,17 @@ fun HomeScreen(
                 Text(
                     text = "See all",
                     style = MaterialTheme.typography.bodyMedium,
+<<<<<<< HEAD
                     color = AccentBlue,
                     modifier = Modifier.clickable { /* Could navigate to History */ }
+=======
+                    color = AccentBlue
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                 )
             }
             Spacer(Modifier.height(12.dp))
 
+<<<<<<< HEAD
             if (history.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -280,6 +303,14 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.height(10.dp))
                 }
+=======
+            MockData.recentAnalyses.forEach { item ->
+                RecentAnalysisCard(
+                    item = item,
+                    onClick = { onRecentItemClick(item.id) }
+                )
+                Spacer(Modifier.height(10.dp))
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             }
         }
 
@@ -361,8 +392,13 @@ private fun TrendingAlertBanner(pulse: Float) {
 }
 
 @Composable
+<<<<<<< HEAD
 private fun RecentAnalysisResultCard(
     item: AnalysisResult,
+=======
+private fun RecentAnalysisCard(
+    item: RecentAnalysis,
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     onClick: () -> Unit
 ) {
     val (badgeColor, badgeBg, badgeLabel) = when (item.credibilityLevel) {
@@ -382,7 +418,11 @@ private fun RecentAnalysisResultCard(
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+<<<<<<< HEAD
         // Credibility indicator
+=======
+        // Credibility dot indicator
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -400,7 +440,11 @@ private fun RecentAnalysisResultCard(
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
+<<<<<<< HEAD
                 text = item.originalText.take(50).let { if (it.length < 50) it else "$it..." },
+=======
+                text = item.title,
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextPrimary,
                 fontSize = 14.sp,
@@ -409,7 +453,11 @@ private fun RecentAnalysisResultCard(
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
+<<<<<<< HEAD
                     text = item.capturedTimeAgo,
+=======
+                    text = "Analyzed ${item.timeAgo}",
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                     fontSize = 11.sp,
                     color = TextTertiary
                 )

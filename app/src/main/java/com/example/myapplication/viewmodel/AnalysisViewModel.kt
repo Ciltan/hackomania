@@ -28,12 +28,15 @@ class AnalysisViewModel : ViewModel() {
     private val _state = MutableStateFlow<AnalysisState>(AnalysisState.Idle)
     val state: StateFlow<AnalysisState> = _state.asStateFlow()
 
+<<<<<<< HEAD
     private val _historyResults = MutableStateFlow<List<AnalysisResult>>(emptyList())
     val historyResults: StateFlow<List<AnalysisResult>> = _historyResults.asStateFlow()
 
     private val _isHistoryLoading = MutableStateFlow(false)
     val isHistoryLoading: StateFlow<Boolean> = _isHistoryLoading.asStateFlow()
 
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     private val _translatedText = MutableStateFlow<String?>(null)
     val translatedText: StateFlow<String?> = _translatedText.asStateFlow()
 
@@ -46,10 +49,13 @@ class AnalysisViewModel : ViewModel() {
     private val _isChatLoading = MutableStateFlow(false)
     val isChatLoading: StateFlow<Boolean> = _isChatLoading.asStateFlow()
 
+<<<<<<< HEAD
     init {
         fetchHistory()
     }
 
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     fun analyze(input: String) {
         viewModelScope.launch {
             _state.value = AnalysisState.Loading
@@ -68,7 +74,10 @@ class AnalysisViewModel : ViewModel() {
                 
                 val internalResult = ApiMapper.mapToInternal(apiResponse)
                 _state.value = AnalysisState.Success(internalResult)
+<<<<<<< HEAD
                 fetchHistory() // Refresh history after analysis
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             } catch (e: Exception) {
                 _state.value = AnalysisState.Error(e.localizedMessage ?: "Analysis failed")
             }
@@ -96,13 +105,17 @@ class AnalysisViewModel : ViewModel() {
                 
                 val internalResult = ApiMapper.mapToInternal(apiResponse)
                 _state.value = AnalysisState.Success(internalResult)
+<<<<<<< HEAD
                 fetchHistory() // Refresh history after analysis
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             } catch (e: Exception) {
                 _state.value = AnalysisState.Error(e.localizedMessage ?: "File analysis failed")
             }
         }
     }
 
+<<<<<<< HEAD
     fun fetchHistory() {
         viewModelScope.launch {
             _isHistoryLoading.value = true
@@ -117,6 +130,8 @@ class AnalysisViewModel : ViewModel() {
         }
     }
 
+=======
+>>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     fun translateArticle(text: String, targetLanguage: String) {
         viewModelScope.launch {
             _isTranslating.value = true
