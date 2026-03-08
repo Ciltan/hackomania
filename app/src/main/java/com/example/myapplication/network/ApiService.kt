@@ -2,10 +2,7 @@ package com.example.myapplication.network
 
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
-<<<<<<< HEAD
 import retrofit2.http.GET
-=======
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -19,12 +16,9 @@ interface ApiService {
         @Part file: MultipartBody.Part? = null
     ): ApiAnalysisResponse
 
-<<<<<<< HEAD
     @GET("api/v1/history")
     suspend fun getHistory(): List<ApiAnalysisResponse>
 
-=======
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     @Multipart
     @POST("api/v1/translate")
     suspend fun translate(

@@ -13,7 +13,7 @@ class ClaimSource(BaseModel):
 class ClaimBreakdown(BaseModel):
     title: str = Field(..., description="Short title like 'Verified: Energy Subsidies'")
     description: str = Field(..., description="Explanation of the specific claim")
-    status: Literal["VERIFIED", "CONTEXT_NEEDED", "FALSE"] = Field(..., description="The status of the claim")
+    status: Literal["VERIFIED", "CONTEXT_NEEDED", "FALSE", "MISLEADING"] = Field(..., description="The status of the claim")
     sources: List[ClaimSource] = Field(..., description="Links to sources for this specific claim")
 
 class LateralReadingSource(BaseModel):

@@ -4,10 +4,6 @@ import com.example.myapplication.model.AnalysisResult
 import com.example.myapplication.model.Claim
 import com.example.myapplication.model.ClaimVerdict
 import com.example.myapplication.model.CredibilityLevel
-<<<<<<< HEAD
-import com.example.myapplication.model.RecentAnalysis
-=======
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
 import com.example.myapplication.model.Source
 import java.util.UUID
 
@@ -48,29 +44,6 @@ object ApiMapper {
             sourceUrl = apiResponse.lateralReading.firstOrNull()?.url
         )
     }
-<<<<<<< HEAD
-
-    fun mapToRecent(apiResponse: ApiAnalysisResponse): RecentAnalysis {
-        return RecentAnalysis(
-            id = UUID.randomUUID().toString(),
-            title = apiResponse.originalSubmission?.content?.take(50)?.let { if (it.length < 50) it else "$it..." } ?: "Untitled Analysis",
-            timeAgo = "Recently",
-            credibilityScore = (apiResponse.credibilityScore * 100).toInt(),
-            credibilityLevel = when {
-                apiResponse.credibilityLevel == "RELIABLE" -> CredibilityLevel.HIGH
-                apiResponse.credibilityLevel == "MISLEADING" -> CredibilityLevel.LOW
-                apiResponse.credibilityScore * 100 < 40 -> CredibilityLevel.LOW
-                apiResponse.credibilityScore * 100 >= 70 -> CredibilityLevel.HIGH
-                else -> CredibilityLevel.UNVERIFIED
-            }
-        )
-    }
 }
 
 fun ApiAnalysisResponse.toAnalysisResult(): AnalysisResult = ApiMapper.mapToInternal(this)
-fun ApiAnalysisResponse.toRecentAnalysis(): RecentAnalysis = ApiMapper.mapToRecent(this)
-=======
-}
-
-fun ApiAnalysisResponse.toAnalysisResult(): AnalysisResult = ApiMapper.mapToInternal(this)
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112

@@ -8,20 +8,16 @@ object RetrofitClient {
 
     /**
      * For Android Emulator: use http://10.0.2.2:8000/
-     * For Physical Device:  use your PC's LAN IP (e.g. http://192.168.x.x:8000/)
+     * For Physical Device:  use your PC's LAN IP (e.g. http://172.29.18.204:8000/)
      *
      * Current setting: Physical device (LAN IP)
      */
-<<<<<<< HEAD
     private const val BASE_URL = "http://172.29.18.204:8000/"
-=======
-    private const val BASE_URL = "http://10.0.2.2:8000/"
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
 
     private val okHttpClient = okhttp3.OkHttpClient.Builder()
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     private val gson = GsonBuilder()

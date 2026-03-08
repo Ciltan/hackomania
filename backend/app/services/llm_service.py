@@ -71,8 +71,7 @@ def extract_keywords(claim: str) -> str:
             messages=[
                 {"role": "system", "content": "Extract 3 to 5 critical search keywords from the given claim. Return ONLY the keywords separated by spaces. Do not use quotes or punctuation."},
                 {"role": "user", "content": claim}
-            ],
-            temperature=0.0
+            ]
         )
         return response.choices[0].message.content.strip()
     except Exception as e:

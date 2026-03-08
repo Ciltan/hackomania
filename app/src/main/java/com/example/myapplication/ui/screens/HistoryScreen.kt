@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-<<<<<<< HEAD
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,34 +34,6 @@ fun HistoryScreen(
     val filteredHistory = remember(selectedFilter, history) {
         if (selectedFilter == "All") history
         else history.filter { it.credibilityLevel.name.equals(selectedFilter, ignoreCase = true) }
-=======
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.myapplication.model.CredibilityLevel
-import com.example.myapplication.model.MockData
-import com.example.myapplication.model.RecentAnalysis
-import com.example.myapplication.ui.theme.*
-
-@Composable
-fun HistoryScreen(
-    onItemClick: (RecentAnalysis) -> Unit
-) {
-    val allHistory = remember {
-        MockData.recentAnalyses + listOf(
-            RecentAnalysis("4", "Singapore hawker centre food safety...", "2d ago", 78, CredibilityLevel.MEDIUM),
-            RecentAnalysis("5", "CPF changes for 2025...", "3d ago", 94, CredibilityLevel.HIGH),
-            RecentAnalysis("6", "Viral: Free iPhone giveaway by telco...", "4d ago", 5, CredibilityLevel.LOW),
-            RecentAnalysis("7", "HDB BTO launch delayed to Q3...", "5d ago", 81, CredibilityLevel.HIGH)
-        )
-    }
-
-    var selectedFilter by remember { mutableStateOf("All") }
-
-    val filteredHistory = remember(selectedFilter) {
-        if (selectedFilter == "All") allHistory
-        else allHistory.filter { it.credibilityLevel.name.equals(selectedFilter, ignoreCase = true) }
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     }
 
     Column(
@@ -86,13 +57,8 @@ fun HistoryScreen(
                 color = TextPrimary,
                 fontWeight = FontWeight.Bold
             )
-<<<<<<< HEAD
             IconButton(onClick = { viewModel.fetchHistory() }) {
                 Icon(Icons.Filled.Refresh, contentDescription = "Refresh", tint = TextSecondary)
-=======
-            IconButton(onClick = {}) {
-                Icon(Icons.Outlined.FilterList, contentDescription = "Filter", tint = TextSecondary)
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             }
         }
 
@@ -117,11 +83,7 @@ fun HistoryScreen(
                     Text(
                         filter,
                         fontSize = 13.sp,
-<<<<<<< HEAD
                         color = if (isSelected) Color.White else TextSecondary,
-=======
-                        color = if (isSelected) androidx.compose.ui.graphics.Color.White else TextSecondary,
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }
@@ -130,7 +92,6 @@ fun HistoryScreen(
 
         Spacer(Modifier.height(16.dp))
 
-<<<<<<< HEAD
         Box(modifier = Modifier.weight(1f)) {
             if (isHistoryLoading && history.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -154,35 +115,12 @@ fun HistoryScreen(
                     Spacer(Modifier.height(16.dp))
                 }
             }
-=======
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-        ) {
-            if (filteredHistory.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No history found for $selectedFilter", color = TextTertiary)
-                }
-            } else {
-                filteredHistory.forEachIndexed { i, item ->
-                    HistoryItemCard(item = item, onClick = { onItemClick(item) })
-                    if (i < filteredHistory.lastIndex) Spacer(Modifier.height(8.dp))
-                }
-            }
-            Spacer(Modifier.height(16.dp))
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
         }
     }
 }
 
 @Composable
-<<<<<<< HEAD
 private fun HistoryItemCard(item: AnalysisResult, onClick: () -> Unit) {
-=======
-private fun HistoryItemCard(item: RecentAnalysis, onClick: () -> Unit) {
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
     val (badgeColor, badgeBg, badgeLabel) = when (item.credibilityLevel) {
         CredibilityLevel.HIGH -> Triple(SuccessGreen, SuccessContainer, "High")
         CredibilityLevel.MEDIUM -> Triple(WarningOrange, WarningContainer, "Medium")
@@ -211,25 +149,17 @@ private fun HistoryItemCard(item: RecentAnalysis, onClick: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-<<<<<<< HEAD
             Text(
                 text = item.originalText.take(50).let { if (it.length < 50) it else "$it..." },
                 fontSize = 14.sp,
                 color = TextPrimary,
                 maxLines = 2
             )
-=======
-            Text(item.title, fontSize = 14.sp, color = TextPrimary, maxLines = 2)
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Schedule, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(4.dp))
-<<<<<<< HEAD
                 Text(item.capturedTimeAgo, fontSize = 11.sp, color = TextTertiary)
-=======
-                Text(item.timeAgo, fontSize = 11.sp, color = TextTertiary)
->>>>>>> e35f3cad15a37b11bec279df070c74d92e49c112
                 Spacer(Modifier.width(8.dp))
                 Box(
                     modifier = Modifier

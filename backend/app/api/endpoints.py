@@ -1,5 +1,5 @@
 import hashlib
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from schemas.payloads import AnalyzeRequest, AnalysisResponse
@@ -12,6 +12,14 @@ router = APIRouter()
 
 def get_input_hash(content: str) -> str:
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+@router.get("/history", response_model=List[AnalysisResponse])
+async def get_history(db: Session = Depends(get_db)):
+    """
+    Get the history of all analyzed content from the database.
+    """
+    records = db.query(AnalysisRecord).order_by(AnalysisRecord.id.desc()).all()
+    return [AnalysisResponse(**record.response_json) for record in records]
 
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_content(
