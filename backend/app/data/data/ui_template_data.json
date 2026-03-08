@@ -1,0 +1,72 @@
+{
+    "header": {
+        "title": "Analysis Results"
+    },
+    "credibility_score": 0.85,
+    "credibility_label": "High Credibility",
+    "credibility_level": "RELIABLE",
+    "source_referenced_count": 14,
+    "original_submission": {
+        "content": "\"Government covers 100% of energy subsidies for low-income households.\"",
+        "metadata": "Submitted via Twitter • 2 hours ago"
+    },
+    "source_credibility": {
+        "name": "The Straits Times",
+        "type": "Established News Organization",
+        "has_trust_badge": true,
+        "description": "Maintains high editorial standards with a robust fact-checking process. Known for objective reporting on regional policy and legislative changes."
+    },
+    "evidence_analysis": [
+        {
+            "type": "POSITIVE EVIDENCE FOUND",
+            "content": "Official press release from the Ministry of Finance confirms the subsidy framework and the Q3 budget allocation mentioned in the claim."
+        },
+        {
+            "type": "INDEPENDENT VERIFICATION",
+            "content": "Cross-verified by major economic networks including Bloomberg and CNBC, noting consistent detail regarding the tiered rebate structure."
+        }
+    ],
+    "claims_breakdown": [
+        {
+            "title": "Verified: Energy Subsidies",
+            "description": "Legislation for energy relief was passed in the Q3 budget review.",
+            "status": "VERIFIED"
+        },
+        {
+            "title": "Context Needed: 100% Coverage",
+            "description": "Full coverage is only applicable to specific heating costs, not total energy.",
+            "status": "CONTEXT_NEEDED"
+        }
+    ],
+    "lateral_reading": [
+        {
+            "name": "Reuters",
+            "status": "Corroborating"
+        },
+        {
+            "name": "AP News",
+            "status": "Corroborating"
+        },
+        {
+            "name": "BBC News",
+            "status": "Contradicting"
+        }
+    ],
+    "context_summary": {
+        "title": "Context Summary",
+        "content": "While the energy subsidy program exists, the claim of **\"100% coverage\"** is an exaggeration. Current legislation establishes a *tiered rebate system* where only the most vulnerable households receive up to 90% of heating costs, while others receive between 30-50%. Recent budget debates suggested a 100% pilot for three specific districts, which likely caused the confusion.",
+        "actions": [
+            {
+                "label": "View Source Documents",
+                "url": "#"
+            },
+            {
+                "label": "Correct Claim",
+                "url": "#"
+            }
+        ]
+    },
+    "navigation": {
+        "active": "analysis"
+    }
+}
